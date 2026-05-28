@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 class CalculatorModel extends ChangeNotifier {
+  String  _expression        = '';
   String  _display           = '0';
   double? _operand;
   String? _operator;
@@ -12,7 +13,8 @@ class CalculatorModel extends ChangeNotifier {
   bool    _justEvaluated     = false;
   bool    _error             = false;
 
-  String get display => _display;
+  String get expression => _expression;
+  String get display    => _display;
 
   String get clearLabel {
     if (!_error && _display == '0' && _operator == null && !_justEvaluated) {
@@ -47,17 +49,23 @@ class CalculatorModel extends ChangeNotifier {
 
   void inputDigit(String digit) {
     if (_error) { clear(); return; }
-    if (_justEvaluated || _waitingForOperand) {
+    if (_justEvaluated) {
+      _expression = digit;
       _display = digit;
       _justEvaluated = false;
-      _waitingForOperand = false;
+      notifyListeners();
       return;
     }
-    if (_display == '0') {
-      _display = digit;
-    } else {
-      _display += digit;
+    if (_waitingForOperand) {
+        _expression +=  digit;
+        _display = digit;
+        _waitingForOperand = false;
+        notifyListeners();
+        return;
     }
+    _display == '0' ? _display = digit : _display += digit;
+    _expression += digit;
+    
     notifyListeners();
   }
 
@@ -65,10 +73,12 @@ class CalculatorModel extends ChangeNotifier {
     if (_error) { clear(); return; }
     if (_justEvaluated || _waitingForOperand) {
       _display = '0.';
+      _expression += '.';
       _justEvaluated = false;
       _waitingForOperand = false;
     } else if (!_display.contains('.')) {
       _display += '.';
+      _expression += '.';
     }
     notifyListeners();
   }
@@ -82,12 +92,13 @@ class CalculatorModel extends ChangeNotifier {
     case '−': result = _operand! - second; break;
     case '×': result = _operand! * second; break;
     case '%': result = _operand! % second; break;
-    case '^': result = pow(_operand!, second) as double; break;
+    case '^': 
+      result = pow(_operand!, second) as double; 
+    break;
     case '÷':
       if (second == 0) {
         _display = 'Error';
         _error = true;
-        notifyListeners();
         return;
       }
       result = _operand! / second;
@@ -109,22 +120,24 @@ class CalculatorModel extends ChangeNotifier {
       case '−': result = current - _lastOperand!; break;
       case '×': result = current * _lastOperand!; break;
       case '%': result = current % _lastOperand!; break;
+      case '^': 
+        result = pow(current, _lastOperand!) as double; 
+      break;
       case '÷':
         if (_lastOperand == 0) {
           _display = 'Error';
+          _expression = "$_expression = $_display";
           _error = true;
           notifyListeners();
           return;
         }
         result = current / _lastOperand!;
       break;
-      case '^': 
-        result = pow(current, _lastOperand!) as double; 
-      break;
       default: return;
       }
       _operand = result;
       _formatDisplay(result);
+      _expression = "$_expression = $_display";
       notifyListeners();
       return;
     }
@@ -132,6 +145,7 @@ class CalculatorModel extends ChangeNotifier {
     _lastOperand  = double.parse(_display);
     _lastOperator = _operator;
     _compute();
+    _expression = "$_expression = $_display";
     _operator = null;
     _justEvaluated = true;
     notifyListeners();
@@ -143,13 +157,20 @@ class CalculatorModel extends ChangeNotifier {
       _operand = double.parse(_display);
       _operator = op;
       _lastOperator = op;
+      _expression = "$display $op ";
       _waitingForOperand = true;
       _justEvaluated = false;
       notifyListeners();
       return;
     }
-    if (_operator == null) { _operand = double.parse(_display); } 
-    else if (!_waitingForOperand) { _compute(); }
+    if (_operator == null) {
+      _operand = double.parse(_display);
+      _expression = "$display $op ";
+    } 
+    else if (!_waitingForOperand) {
+      _compute();
+      _expression = _expression.substring(0, _expression.length - 3) + " $op ";
+    }
     _operator = op;
     _waitingForOperand = true;
     _justEvaluated = false;
@@ -158,6 +179,7 @@ class CalculatorModel extends ChangeNotifier {
 
   void clear() {
     _display = '0';
+    _expression = '';
     _operand = null;
     _operator = null;
     _lastOperand = null;
@@ -180,6 +202,7 @@ class CalculatorModel extends ChangeNotifier {
     if (_justEvaluated || _waitingForOperand) return;
     if (_display.length > 1) {
       _display = _display.substring(0, _display.length - 1);
+      if (_display == '-') _display = '0';
     } else {
       _display = '0';
     }
@@ -199,6 +222,7 @@ class CalculatorModel extends ChangeNotifier {
   void sqrtOp() {
     if (_error) return;
     double value = double.parse(_display);
+    _expression = "√($_display)";
     _formatDisplay(sqrt(value));
     _justEvaluated = true;
     notifyListeners();
@@ -207,6 +231,7 @@ class CalculatorModel extends ChangeNotifier {
   void percent() {
     if (_error) return;
     double value = double.parse(_display) / 100;
+    _expression = "$_display%";
     _formatDisplay(value);
     notifyListeners();
   }

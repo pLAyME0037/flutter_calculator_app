@@ -42,16 +42,33 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     return Container(
       alignment: Alignment.bottomRight,
       padding: const EdgeInsets.all(24),
-      child: Text(_model.display,
-                  style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w300),
-                  maxLines: 2,));
+      child: Column( 
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text( 
+            _model.expression,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontSize: 20, color: Colors.grey),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _model.display,
+            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w300),
+            maxLines: 2,
+          )
+        ]
+      ) 
+    );
   }
 
   Widget _buildButtons() {
     return Column(
       children: [
-        _buildRow([_model.clearLabel, '±', '^', '%']),
-        _buildRow(['000', '0.01', '√', '÷']),
+        _buildRow([_model.clearLabel, '0.01', '±', ' ']),
+        _buildRow(['^', '√', '%', '÷']),
         _buildRow(['7', '8', '9', '×']),
         _buildRow(['4', '5', '6', '−']),
         _buildRow(['1', '2', '3', '+']),
@@ -96,6 +113,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   Widget _buttonWidget(String label) {
     final bool isOperator = ['+', '−', '×', '÷', '='].contains(label);
+    final bool isSpecialOp = ['^', '√', '%'].contains(label);
     final bool isClear = label == 'AC' || label == 'C';
     final bool isEquals = label == '=';
 
@@ -104,6 +122,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     if (isOperator || isEquals) {
       bgColor = Colors.orange;
       fgColor = Colors.white;
+    } else if (isSpecialOp) {
+      bgColor = Colors.yellowAccent.withRed(200);
+      fgColor = Colors.black87;
     } else if (isClear) {
       bgColor = Colors.grey.shade300;
       fgColor = Colors.black87;
@@ -133,6 +154,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     switch (label) {
     case 'AC': _model.clear();              break;
     case 'C' : _model.clearEntry();         break;
+    case ' ': _model.backspace();          break;
     case '±' : _model.negate();             break;
     case '=' : _model.evaluate();           break;
     case '√' : _model.sqrtOp();             break;
