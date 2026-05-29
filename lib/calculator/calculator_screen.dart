@@ -10,7 +10,6 @@ class CalculatorScreen extends StatefulWidget {
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
   final CalculatorModel _model = CalculatorModel();
-
   late final VoidCallback _listener;
 
   @override
@@ -67,7 +66,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   Widget _buildButtons() {
     return Column(
       children: [
-        _buildRow([_model.clearLabel, '0.01', '±', ' ']),
+        _buildRow([_model.clearLabel, '0.01', '±', 'del']),
         _buildRow(['^', '√', '%', '÷']),
         _buildRow(['7', '8', '9', '×']),
         _buildRow(['4', '5', '6', '−']),
@@ -116,6 +115,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     final bool isSpecialOp = ['^', '√', '%'].contains(label);
     final bool isClear = label == 'AC' || label == 'C';
     final bool isEquals = label == '=';
+    final bool isBackspace = label == 'del';
 
     Color bgColor;
     Color fgColor;
@@ -141,12 +141,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        textStyle: TextStyle(
-          fontSize: isEquals ? 28 : 22,
-          fontWeight: isOperator || isEquals ? FontWeight.w500 : FontWeight.normal,
-        ),
       ),
-      child: Text(label),
+      child: isBackspace
+          ? const Icon(Icons.backspace)
+          : Text(label, style: TextStyle(fontSize: label == '0.01' ? 14 : (isEquals ? 28 : 20))),
     );
   }
 
@@ -154,7 +152,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     switch (label) {
     case 'AC': _model.clear();              break;
     case 'C' : _model.clearEntry();         break;
-    case ' ': _model.backspace();          break;
+    case 'del': _model.backspace();         break;
     case '±' : _model.negate();             break;
     case '=' : _model.evaluate();           break;
     case '√' : _model.sqrtOp();             break;

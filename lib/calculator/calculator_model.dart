@@ -71,12 +71,21 @@ class CalculatorModel extends ChangeNotifier {
 
   void inputDecimal() {
     if (_error) { clear(); return; }
-    if (_justEvaluated || _waitingForOperand) {
+    if (_justEvaluated) {
+      _display = '0.';
+      _expression = '0.';
+      _justEvaluated = false;
+      notifyListeners();
+      return;
+    }
+    if (_waitingForOperand) {
       _display = '0.';
       _expression += '.';
-      _justEvaluated = false;
       _waitingForOperand = false;
-    } else if (!_display.contains('.')) {
+      notifyListeners();
+      return;
+    }
+    if (!_display.contains('.')) {
       _display += '.';
       _expression += '.';
     }
@@ -157,7 +166,7 @@ class CalculatorModel extends ChangeNotifier {
       _operand = double.parse(_display);
       _operator = op;
       _lastOperator = op;
-      _expression = "$display $op ";
+      _expression += " $op ";
       _waitingForOperand = true;
       _justEvaluated = false;
       notifyListeners();
@@ -166,10 +175,11 @@ class CalculatorModel extends ChangeNotifier {
     if (_operator == null) {
       _operand = double.parse(_display);
       _expression = "$display $op ";
-    } 
-    else if (!_waitingForOperand) {
+    } else if (!_waitingForOperand) {
       _compute();
-      _expression = _expression.substring(0, _expression.length - 3) + " $op ";
+      _expression += ' $op ';
+    } else {
+      _expression = '${_expression.substring(0, _expression.length - 3)}$op ';
     }
     _operator = op;
     _waitingForOperand = true;
@@ -192,6 +202,7 @@ class CalculatorModel extends ChangeNotifier {
 
   void clearEntry() {
     _display = '0';
+    _expression = '';
     _waitingForOperand = true;
     _error = false;
     notifyListeners();
